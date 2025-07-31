@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' app: https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - Minha Lista</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/settings.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+    <div id="title-bar">
+        <div id="drag-region">
+            <button id="btn-back" title="Voltar para a lista"><i class="fas fa-arrow-left"></i> Voltar</button>
+        </div>
+        <div id="window-controls">
+            <button id="minimize-btn" title="Minimizar">_</button>
+            <button id="maximize-btn" title="Maximizar / Restaurar">☐</button>
+            <button id="close-btn" title="Fechar">✕</button>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="settings-container">
+            <nav class="settings-sidebar">
+                <a href="#" class="nav-link active" data-tab="conta"><i class="fas fa-user-circle"></i> Conta</a>
+                <a href="#" class="nav-link" data-tab="aparencia"><i class="fas fa-palette"></i> Aparência</a>
+                <a href="#" class="nav-link" data-tab="lista"><i class="fas fa-list-ul"></i> Listas</a>
+                <a href="#" class="nav-link" data-tab="dados"><i class="fas fa-database"></i> Dados</a>
+                <a href="#" class="nav-link" data-tab="sobre"><i class="fas fa-info-circle"></i> Sobre</a>
+            </nav>
+
+            <div class="settings-content">
+
+                 <!-- Seção Conta -->
+                <div id="conta" class="tab-content">
+                    <h2>Conta</h2>
+                    <div class="setting-section">
+                        <h3>Apagar Todas as Listas</h3>
+                        <p>Esta ação é irreversível. Todos os itens de todas as suas listas serão permanentemente apagados.</p>
+                        <button id="btn-delete-all-lists" class="button-settings destructive">Apagar Todas as Listas</button>
+                    </div>
+                    <div class="setting-section">
+                        <h3>Apagar a Minha Conta</h3>
+                        <p>Esta ação é final e irreversível. Todos os seus dados, incluindo listas e configurações, serão permanentemente apagados.</p>
+                        <button id="btn-delete-account" class="button-settings destructive">Apagar a Minha Conta</button>
+                    </div>
+                </div>
+
+                <!-- Seção Aparência -->
+                <div id="aparencia" class="tab-content active">
+                    <h2>Aparência</h2>
+                    <div class="setting-section">
+                        <h3>Tema</h3>
+                        <p>Escolha entre o tema claro ou escuro para o aplicativo.</p>
+                        <div class="form-group">
+                            <label for="theme-selector">Tema</label>
+                            <select id="theme-selector">
+                                <option value="theme-dark">Escuro (Dark)</option>
+                                <option value="theme-light">Claro (Light)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="setting-section">
+                        <h3>Cor de Destaque</h3>
+                        <p>Personalize a cor principal de botões e links.</p>
+                        <div class="form-group">
+                            <label for="accent-color-selector">Cor Principal</label>
+                            <select id="accent-color-selector">
+                                <option value="blue">Azul (Padrão)</option>
+                                <option value="purple">Roxo</option>
+                                <option value="green">Verde</option>
+                                <option value="orange">Laranja</option>
+                                <option value="red">Vermelho</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Seção Listas -->
+                <div id="lista" class="tab-content">
+                    <h2>Gerir Listas Visíveis</h2>
+                    <div class="setting-section">
+                        <p>Escolha quais listas devem aparecer na tela principal.</p>
+                        <div id="list-visibility-container">
+                            <!-- As opções serão geradas pelo JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção Dados -->
+                <div id="dados" class="tab-content">
+                    <h2>Backup e Restauração</h2>
+                    <div class="setting-section">
+                        <h3>Fazer Backup Completo (Exportar)</h3>
+                        <p>Exporte todas as suas listas para um único ficheiro JSON.</p>
+                        <button id="btn-export" class="button-settings">Exportar Todas as Listas</button>
+                    </div>
+                    <div class="setting-section">
+                        <h3>Restaurar Backup (Importar)</h3>
+                        <p>Importe um ficheiro de backup JSON para restaurar todas as suas listas. <strong>Atenção:</strong> Isto substituirá todos os dados atuais.</p>
+                        <button id="btn-import" class="button-settings">Importar Backup</button>
+                    </div>
+                </div>
+
+                <!-- Seção Sobre -->
+                <div id="sobre" class="tab-content">
+                    <h2>Sobre</h2>
+                    <div class="setting-section">
+                        <h3>Minha Lista Desktop</h3>
+                        <p><strong>Versão:</strong> 1.0.0</p>
+                        <p>Um aplicativo para organizar e acompanhar as suas mídias favoritas.</p>
+                        <button id="btn-github" class="button-settings">Ver no GitHub</button>
+                    </div>
+                    <div class="setting-section">
+                        <h3>Créditos</h3>
+                        <p>Dados fornecidos por:</p>
+                        <ul>
+                            <li><a href="#" id="link-jikan">Jikan API (MyAnimeList)</a></li>
+                            <li><a href="#" id="link-tmdb">The Movie Database (TMDB) API</a></li>
+                            <li><a href="#" id="link-google-books">Google Books API</a></li>
+                            <li><a href="#" id="link-comic-vine">Comic Vine API</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Confirmação -->
+    <div id="modal-overlay" class="hidden">
+        <div id="custom-modal">
+            <h2 id="modal-title">Título</h2>
+            <p id="modal-message">Mensagem.</p>
+            <div id="modal-actions">
+                <button id="modal-btn-cancel">Cancelar</button>
+                <button id="modal-btn-confirm" class="destructive">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/settings.js" type="module"></script>
+</body>
+</html>

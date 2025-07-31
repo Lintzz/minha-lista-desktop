@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' app: https://www.gstatic.com https://apis.google.com;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div id="title-bar">
+        <div id="drag-region"></div>
+        <div id="window-controls">
+            <button id="minimize-btn" title="Minimizar">_</button>
+            <button id="maximize-btn" title="Maximizar / Restaurar">☐</button> <!-- ADICIONADO -->
+            <button id="close-btn" title="Fechar">✕</button>
+        </div>
+    </div>
+
+    <div class="login-container">
+        <div class="login-box">
+            <h1>Minha Lista</h1>
+            <p>Acesse as suas listas de qualquer lugar.</p>
+            <button id="google-login-btn">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google icon">
+                <span>Entrar com Google</span>
+            </button>
+            <div id="login-status" class="hidden"></div>
+        </div>
+    </div>
+    <script src="../js/login.js" type="module"></script>
+</body>
+</html>
