@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog, session, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 
@@ -8,6 +9,7 @@ const COMIC_VINE_API_KEY = '921dd45c55b4d9c6bd1de9c8449f4ec607d260ac';
 
 let mainWindow;
 
+// Registra o protocolo customizado para o deep link
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
     app.setAsDefaultProtocolClient('minha-lista', process.execPath, [path.resolve(process.argv[1])]);
@@ -16,6 +18,7 @@ if (process.defaultApp) {
   app.setAsDefaultProtocolClient('minha-lista');
 }
 
+// Garante que apenas uma instância do app rode por vez
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
@@ -29,8 +32,6 @@ if (!gotTheLock) {
       mainWindow.webContents.send('deep-link-received', deepLinkUrl);
     }
   });
-
-  app.whenReady().then(createWindow);
 }
 
 function createWindow () {
@@ -52,10 +53,27 @@ function createWindow () {
   }
 }
 
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+// --- Ciclo de Vida do App ---
 
-// --- IPC LISTENERS ---
+app.whenReady().then(() => {
+  createWindow();
+  // Inicia a verificação de updates assim que o app estiver pronto
+  autoUpdater.checkForUpdatesAndNotify();
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
+});
+
+// --- IPC Listeners (Comunicação entre processos) ---
 
 ipcMain.on('ready-to-show', () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show(); });
 ipcMain.on('open-external-link', (event, url) => { shell.openExternal(url); });
@@ -66,7 +84,11 @@ ipcMain.on('navigate-to-confirm-register', (event) => { const win = BrowserWindo
 ipcMain.on('logout', (event) => { const win = BrowserWindow.fromWebContents(event.sender); if (win) { session.defaultSession.clearStorageData().then(() => { win.loadFile(path.join(__dirname, 'src/html/login.html')); }); }});
 ipcMain.on('minimize-window', (event) => { BrowserWindow.fromWebContents(event.sender)?.minimize(); });
 ipcMain.on('maximize-window', (event) => { const win = BrowserWindow.fromWebContents(event.sender); if (win) { if (win.isMaximized()) { win.unmaximize(); } else { win.maximize(); } } });
-ipcMain.on('close-window', (event) => { BrowserWindow.fromWebContents(event.sender)?.close(); });
+
+// O botão 'X' da interface agora chama o encerramento do app diretamente.
+ipcMain.on('close-window', (event) => {
+    app.quit();
+});
 
 ipcMain.handle('carregar-settings', async () => {
     try {
@@ -100,10 +122,7 @@ ipcMain.on('salvar-settings', (event, settings) => {
 });
 
 ipcMain.handle('importar-json', async () => {
-    const { canceled, filePaths } = await dialog.showOpenDialog({
-        properties: ['openFile'],
-        filters: [ { name: 'JSON Files', extensions: ['json'] } ]
-    });
+    const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openFile'], filters: [ { name: 'JSON Files', extensions: ['json'] } ] });
     if (canceled || filePaths.length === 0) return null;
     try {
         const fileData = fs.readFileSync(filePaths[0], 'utf8');
@@ -123,11 +142,7 @@ ipcMain.handle('importar-json', async () => {
 
 ipcMain.handle('exportar-json', async (event, dados) => {
     try {
-        const { canceled, filePath } = await dialog.showSaveDialog({
-            title: 'Salvar Backup Completo',
-            defaultPath: `backup_minha_lista_${new Date().toISOString().slice(0, 10)}.json`,
-            filters: [ { name: 'JSON Files', extensions: ['json'] } ]
-        });
+        const { canceled, filePath } = await dialog.showSaveDialog({ title: 'Salvar Backup Completo', defaultPath: `backup_minha_lista_${new Date().toISOString().slice(0, 10)}.json`, filters: [ { name: 'JSON Files', extensions: ['json'] } ]});
         if (canceled || !filePath) return { success: false, message: 'Exportação cancelada.' };
         const jsonString = JSON.stringify(dados, null, 2);
         fs.writeFileSync(filePath, jsonString, 'utf-8');
@@ -139,83 +154,56 @@ ipcMain.handle('exportar-json', async (event, dados) => {
 });
 
 ipcMain.handle('search-tmdb', async (event, searchTerm, searchType) => {
-    if (!TMDB_API_KEY) {
-        return { success: false, error: 'Chave de API do TMDB não configurada.' };
-    }
-    if (!searchTerm || searchTerm.length < 3) {
-        return { success: true, data: [] };
-    }
+    if (!TMDB_API_KEY) return { success: false, error: 'Chave de API do TMDB não configurada.' };
+    if (!searchTerm || searchTerm.length < 3) return { success: true, data: [] };
     const url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(searchTerm)}&language=pt-BR&page=1`;
     try {
         const response = await fetch(url);
         const data = await response.json();
-        if (!response.ok) {
-            return { success: false, error: data.status_message || `API retornou erro: ${response.statusText}` };
-        }
+        if (!response.ok) return { success: false, error: data.status_message || `API retornou erro: ${response.statusText}` };
         const titles = data.results?.map(item => item.title || item.name) || [];
         return { success: true, data: titles.slice(0, 5) };
-    } catch (error) {
-        return { success: false, error: 'Falha de rede ou API offline.' };
-    }
+    } catch (error) { return { success: false, error: 'Falha de rede ou API offline.' }; }
 });
 
 ipcMain.handle('search-jikan', async (event, searchTerm, searchType) => {
-    // searchType será 'anime' ou 'manga'
     if (!searchTerm || searchTerm.length < 3) return { success: true, data: [] };
     const url = `https://api.jikan.moe/v4/${searchType}?q=${encodeURIComponent(searchTerm)}&limit=5`;
     try {
         const response = await fetch(url);
-        if (!response.ok) {
-            return { success: false, error: `API retornou erro: ${response.statusText}` };
-        }
+        if (!response.ok) return { success: false, error: `API retornou erro: ${response.statusText}` };
         const data = await response.json();
         const titles = data.data?.map(item => item.title) || [];
         return { success: true, data: titles };
-    } catch (error) {
-        return { success: false, error: 'Falha de rede ou API offline.' };
-    }
+    } catch (error) { return { success: false, error: 'Falha de rede ou API offline.' }; }
 });
 
-// Adicione este novo handler para buscar livros
 ipcMain.handle('search-google-books', async (event, searchTerm) => {
     if (!GOOGLE_BOOKS_API_KEY) return { success: false, error: 'Chave de API do Google Books não configurada.' };
     if (!searchTerm || searchTerm.length < 3) return { success: true, data: [] };
-    
     const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchTerm)}&key=${GOOGLE_BOOKS_API_KEY}&maxResults=5`;
-    
     try {
         const response = await fetch(url);
         const data = await response.json();
         if (!response.ok) return { success: false, error: 'Erro na API do Google Books.' };
-
         const results = data.items?.map(item => {
             const title = item.volumeInfo.title;
             const author = item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : 'Autor desconhecido';
-            return { title, author }; // Retorna um objeto com título e autor
+            return { title, author };
         }) || [];
-        
         return { success: true, data: results };
-    } catch (error) {
-        return { success: false, error: 'Falha de rede ou API offline.' };
-    }
+    } catch (error) { return { success: false, error: 'Falha de rede ou API offline.' }; }
 });
 
-// Adicione este novo handler para buscar HQs
-// ATENÇÃO: A API do Comic Vine pode ter restrições de CORS. Se isso acontecer, precisaremos de um ajuste.
 ipcMain.handle('search-comic-vine', async (event, searchTerm) => {
     if (!COMIC_VINE_API_KEY) return { success: false, error: 'Chave de API da Comic Vine não configurada.' };
     if (!searchTerm || searchTerm.length < 3) return { success: true, data: [] };
-
     const url = `https://comicvine.gamespot.com/api/search/?api_key=${COMIC_VINE_API_KEY}&format=json&query=${encodeURIComponent(searchTerm)}&resources=volume&limit=5`;
-    
     try {
         const response = await fetch(url, { headers: { 'User-Agent': 'MinhaListaDesktopApp/1.0' } });
         const data = await response.json();
         if (data.error !== 'OK') return { success: false, error: data.error };
-
         const titles = data.results?.map(item => item.name) || [];
         return { success: true, data: titles };
-    } catch (error) {
-        return { success: false, error: 'Falha de rede ou API offline.' };
-    }
+    } catch (error) { return { success: false, error: 'Falha de rede ou API offline.' }; }
 });

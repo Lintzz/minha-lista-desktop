@@ -227,3 +227,82 @@
 #pesquisaInput {
     padding-left: 40px; /* Aumenta o padding esquerdo para o texto não ficar em cima do ícone */
 }
+
+/* Estilos para os controles de edição rápida (+/-) */
+.quick-edit-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* Espaço entre os botões e o número */
+}
+
+/* DEPOIS (Estilo Minimalista) */
+.quick-edit-btn {
+    font-family: monospace;
+    font-size: 1.4em;
+    font-weight: bold;
+    border: none;
+    background-color: transparent; /* Fundo transparente */
+    color: var(--secondary-text-color); /* Cor mais sutil */
+    cursor: pointer;
+    padding: 0 5px; /* Adiciona uma área de clique lateral */
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.quick-edit-btn:hover {
+    background-color: var(--surface-highlight-color);
+    color: var(--primary-text-color); /* Cor mais forte no hover */
+}
+
+/* Estilos para o novo interruptor Sim/Não na lista de filmes */
+.movie-toggle-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.toggle-switch-small {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-switch-small input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider-small {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--button-bg-color);
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider-small:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider-small {
+    background-color: var(--accent-color); 
+}
+
+input:checked + .slider-small:before {
+    transform: translateX(26px);
+}

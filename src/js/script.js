@@ -124,14 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const button = event.currentTarget;
         event.stopPropagation();
         const rect = button.getBoundingClientRect();
-
+        
         if (menu === dropdownMenu) {
             const itemDiv = button.closest('.item-lista');
             menu.dataset.id = itemDiv.dataset.id;
-            const rightEdgeDistance = window.innerWidth - rect.right;
             menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
+            const rightEdgeDistance = window.innerWidth - rect.right;
             menu.style.right = `${rightEdgeDistance}px`;
-            menu.style.left = 'auto';
+            menu.style.left = 'auto'; 
         } else if (menu === statusDropdown) {
             const itemDiv = button.closest('.item-lista');
             menu.dataset.id = itemDiv.dataset.id;
@@ -156,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const tabs = listTabsContainer.querySelectorAll('.list-tab');
         let firstVisibleTab = null;
         let activeTabIsVisible = false;
-
         tabs.forEach(tab => {
             const listName = tab.dataset.list;
             if (visibleLists[listName]) {
@@ -168,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (activeList === listName) tab.classList.remove('active');
             }
         });
-
         if (!activeTabIsVisible && firstVisibleTab) {
             activeList = firstVisibleTab;
             const newActiveTab = listTabsContainer.querySelector(`.list-tab[data-list="${firstVisibleTab}"]`);
@@ -184,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
         headerCol1.style.display = 'none';
         headerCol2.style.display = 'none';
         if (!anyListVisible) return;
-
         switch (activeList) {
             case 'manga':
                 headerCol1.textContent = 'Volume'; headerCol2.textContent = 'Capítulo';
@@ -202,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headerCol1.textContent = 'Edição';
                 headerCol1.style.display = 'block';
                 break;
-            default: // anime, serie
+            default:
                 headerCol1.textContent = 'Temporada'; headerCol2.textContent = 'Episódio';
                 headerCol1.style.display = 'block'; headerCol2.style.display = 'block';
                 break;
@@ -230,30 +227,30 @@ document.addEventListener('DOMContentLoaded', () => {
             itemDiv.className = 'item-lista';
             itemDiv.dataset.id = item.id;
             let colTempHTML = '', colEpHTML = '', subTitleHTML = '';
+            const isChecked = item.status === 'terminado';
 
             switch (activeList) {
                 case 'manga':
-                    colTempHTML = `<span class="coluna-temp">${item.volume || 0}</span>`;
-                    colEpHTML = `<span class="coluna-ep">${item.capitulo || 0}</span>`;
+                    colTempHTML = `<span class="coluna-temp quick-edit-controls"><button class="quick-edit-btn" data-action="decrement" data-field="volume">-</button><span>${item.volume || 0}</span><button class="quick-edit-btn" data-action="increment" data-field="volume">+</button></span>`;
+                    colEpHTML = `<span class="coluna-ep quick-edit-controls"><button class="quick-edit-btn" data-action="decrement" data-field="capitulo">-</button><span>${item.capitulo || 0}</span><button class="quick-edit-btn" data-action="increment" data-field="capitulo">+</button></span>`;
                     break;
                 case 'filme':
-                    colTempHTML = `<span class="coluna-temp">${item.status === 'terminado' ? 'Sim' : 'Não'}</span>`;
+                    colTempHTML = `<span class="coluna-temp movie-toggle-container"><label class="toggle-switch-small"><input type="checkbox" class="movie-watched-toggle" ${isChecked ? 'checked' : ''}><span class="slider-small"></span></label></span>`;
                     break;
                 case 'livro':
                     subTitleHTML = `<span class="coluna-subtitulo">${item.autor || ''}</span>`;
-                    colTempHTML = `<span class="coluna-temp">${item.capitulo || 0}</span>`;
-                    colEpHTML = `<span class="coluna-ep">${item.pagina || 0}</span>`;
+                    colTempHTML = `<span class="coluna-temp quick-edit-controls"><button class="quick-edit-btn" data-action="decrement" data-field="capitulo">-</button><span>${item.capitulo || 0}</span><button class="quick-edit-btn" data-action="increment" data-field="capitulo">+</button></span>`;
+                    colEpHTML = `<span class="coluna-ep quick-edit-controls"><button class="quick-edit-btn" data-action="decrement" data-field="pagina">-</button><span>${item.pagina || 0}</span><button class="quick-edit-btn" data-action="increment" data-field="pagina">+</button></span>`;
                     break;
                 case 'hq':
                     subTitleHTML = `<span class="coluna-subtitulo">${item.editora || ''}</span>`;
-                    colTempHTML = `<span class="coluna-temp">${item.edicao || '#'}</span>`;
+                    colTempHTML = `<span class="coluna-temp quick-edit-controls"><button class="quick-edit-btn" data-action="decrement" data-field="edicao">-</button><span>#${item.edicao || 0}</span><button class="quick-edit-btn" data-action="increment" data-field="edicao">+</button></span>`;
                     break;
                 default:
-                    colTempHTML = `<span class="coluna-temp">${item.temporada || 0}</span>`;
-                    colEpHTML = `<span class="coluna-ep">${item.ultimoEpisodio || 0}</span>`;
+                    colTempHTML = `<span class="coluna-temp quick-edit-controls"><button class="quick-edit-btn" data-action="decrement" data-field="temporada">-</button><span>${item.temporada || 0}</span><button class="quick-edit-btn" data-action="increment" data-field="temporada">+</button></span>`;
+                    colEpHTML = `<span class="coluna-ep quick-edit-controls"><button class="quick-edit-btn" data-action="decrement" data-field="ultimoEpisodio">-</button><span>${item.ultimoEpisodio || 0}</span><button class="quick-edit-btn" data-action="increment" data-field="ultimoEpisodio">+</button></span>`;
                     break;
             }
-
             itemDiv.innerHTML = `
                 <div class="col-group-left">
                     <span class="coluna-status"><div class="status-dot status-${item.status}" title="Mudar status"></div></span>
@@ -287,8 +284,66 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!isVisible) abrirDropdown(event, statusDropdown);
             });
         });
-    }
 
+        minhaLista.querySelectorAll('.movie-watched-toggle').forEach(toggle => {
+            toggle.addEventListener('change', (event) => {
+                const itemDiv = event.target.closest('.item-lista');
+                const itemId = parseInt(itemDiv.dataset.id, 10);
+                const item = allData.filme.find(i => i.id === itemId);
+                if (!item) return;
+
+                const isWatched = event.target.checked;
+                item.status = isWatched ? 'terminado' : 'naoComecei';
+                
+                salvarDadosNoFirestore();
+                renderizarLista(); 
+            });
+        });
+    }
+    
+    // Listener para os botões de +/- (agora fora da função acima para evitar duplicação)
+    minhaLista.addEventListener('click', (event) => {
+        if (!event.target.classList.contains('quick-edit-btn')) return;
+        event.stopPropagation();
+        const button = event.target;
+        const itemDiv = button.closest('.item-lista');
+        const itemId = parseInt(itemDiv.dataset.id, 10);
+        const item = allData[activeList].find(i => i.id === itemId);
+        if (!item) return;
+
+        const action = button.dataset.action;
+        const field = button.dataset.field;
+        let currentValue = item[field];
+        
+        // CORREÇÃO: Bug do botão "-" em HQs
+        // O valor salvo é um número, mas a exibição tem um '#'. Tratamos apenas o número.
+        currentValue = parseInt(currentValue) || 0;
+        if (action === 'increment') {
+            currentValue++;
+        } else if (action === 'decrement' && currentValue > 0) {
+            currentValue--;
+        }
+
+        item[field] = currentValue;
+        
+        // NOVA FUNCIONALIDADE: Status automático
+        const statusChanged = checkAndSetAutoStatus(item);
+
+        if (statusChanged) {
+            salvarDadosNoFirestore();
+            renderizarLista(); // Re-renderiza para mudar a cor do status
+        } else {
+            // Se o status não mudou, apenas atualiza o número na tela
+            const displaySpan = button.parentElement.querySelector('span');
+            // Adiciona o '#' de volta para a exibição de HQs
+            if(displaySpan) displaySpan.textContent = (field === 'edicao' ? '#' : '') + currentValue;
+            
+            // Salva no Firestore com um pequeno atraso
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(salvarDadosNoFirestore, 500);
+        }
+    });
+    
     function apagarItem(itemId) {
         const index = allData[activeList].findIndex(item => item.id == itemId);
         if (index > -1) {
@@ -306,21 +361,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (sortState === 'default') {
             sortIndicator.textContent = '';
-            // Se quiser que a ordem volte à original (por adição), você precisaria recarregar os dados.
-            // Por simplicidade, vamos apenas remover a ordenação alfabética.
         } else {
             sortIndicator.textContent = sortState === 'asc' ? '▲' : '▼';
             allData[activeList].sort((a, b) => {
-                const nomeA = a.nome.toLowerCase();
-                const nomeB = b.nome.toLowerCase();
-                if (nomeA < nomeB) return sortState === 'asc' ? -1 : 1;
-                if (nomeA > nomeB) return sortState === 'asc' ? 1 : -1;
-                return 0;
+                return (sortState === 'asc') ? a.nome.localeCompare(b.nome) : b.nome.localeCompare(a.nome);
             });
         }
         renderizarLista();
     }
-
+    
     function renderSuggestions(suggestions, inputElement) {
         const container = inputElement.closest('.autocomplete-container');
         if (!container) return;
@@ -331,40 +380,27 @@ document.addEventListener('DOMContentLoaded', () => {
             suggestionsDiv.classList.add('hidden');
             return;
         }
-
         suggestions.forEach(suggestion => {
             const item = document.createElement('div');
             item.className = 'suggestion-item';
-            
-            let displayText = '';
-            let clickValue = '';
-
-            // Verifica se a sugestão é um objeto (livro) ou um texto (outros)
+            let displayText = '', clickValue = '';
             if (typeof suggestion === 'object' && suggestion !== null && suggestion.title) {
-                // É um livro! Formata para mostrar Título e Autor.
                 displayText = `<strong>${suggestion.title}</strong><br><small>${suggestion.author}</small>`;
                 clickValue = suggestion.title;
             } else {
-                // É um texto simples
                 displayText = suggestion;
                 clickValue = suggestion;
             }
-
-            item.innerHTML = displayText; // Usamos innerHTML para renderizar o HTML
-            item.title = clickValue; // Dica de ferramenta mostra apenas o título
-
+            item.innerHTML = displayText;
+            item.title = clickValue;
             item.addEventListener('click', () => {
                 inputElement.value = clickValue;
                 suggestionsDiv.classList.add('hidden');
-
-                // BÔNUS: Se for um livro, preenche o campo de autor!
                 if (typeof suggestion === 'object' && suggestion.author) {
                     const form = inputElement.closest('.form-inline, .is-editing');
                     if (form) {
                         const authorInput = form.querySelector('input[name="autor"]');
-                        if (authorInput) {
-                            authorInput.value = suggestion.author;
-                        }
+                        if (authorInput) authorInput.value = suggestion.author;
                     }
                 }
             });
@@ -384,7 +420,6 @@ document.addEventListener('DOMContentLoaded', () => {
             debounceTimer = setTimeout(async () => {
                 if(!window.electronAPI) return;
                 let response;
-                
                 if (activeList === 'livro') {
                     response = await window.electronAPI.searchGoogleBooks(term);
                 } else if (activeList === 'hq') {
@@ -395,9 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const searchType = (activeList === 'serie') ? 'tv' : 'movie';
                     response = await window.electronAPI.searchTmdb(term, searchType);
                 }
-                
                 if (response && response.success) {
-                    // Precisamos ajustar renderSuggestions para lidar com objetos (título + autor)
                     renderSuggestions(response.data, inputElement);
                 } else if (response) {
                     console.error(`Falha no autocomplete para ${activeList}:`, response.error);
@@ -413,9 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const formDiv = document.createElement('div');
         formDiv.className = 'item-lista form-inline';
         let groupLeftHTML = '', groupMiddleHTML = '';
-        
         const nomeInputHTML = `<div class="autocomplete-container"><input type="text" name="nome" placeholder="Nome do Título"><div class="autocomplete-suggestions hidden"></div></div>`;
-        
         switch (activeList) {
             case 'livro':
                 groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML.replace('placeholder="Nome do Título"', 'placeholder="Nome do Livro"')}<input type="text" name="autor" placeholder="Autor"></span>`;
@@ -423,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'hq':
                 groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML.replace('placeholder="Nome do Título"', 'placeholder="Nome da HQ"')}<input type="text" name="editora" placeholder="Editora"></span>`;
-                groupMiddleHTML = `<span class="coluna-temp"><input type="text" name="edicao" placeholder="Edição #"></span>`;
+                groupMiddleHTML = `<span class="coluna-temp"><input type="number" name="edicao" min="0" placeholder="Edição #"></span>`;
                 break;
             case 'manga':
                 groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML}</span>`;
@@ -438,22 +469,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 groupMiddleHTML = `<span class="coluna-temp"><input type="number" name="temporada" min="0" placeholder="Temp"></span><span class="coluna-ep"><input type="number" name="ultimoEpisodio" min="0" placeholder="Ep"></span>`;
                 break;
         }
-        
-        formDiv.innerHTML = `
-            <div class="edit-inputs-wrapper">
-                <div class="col-group-left">${groupLeftHTML}</div>
-                <div class="col-group-middle">${groupMiddleHTML}</div>
-                <div class="col-group-right"><span class="coluna-acoes">&nbsp;</span></div>
-            </div>
-            <div class="edit-actions-row">
-                <button class="btn-cancel-edit">Cancelar</button>
-                <button class="btn-save-edit">Salvar</button>
-            </div>`;
-        
+        formDiv.innerHTML = `<div class="edit-inputs-wrapper"><div class="col-group-left">${groupLeftHTML}</div><div class="col-group-middle">${groupMiddleHTML}</div><div class="col-group-right"><span class="coluna-acoes">&nbsp;</span></div></div><div class="edit-actions-row"><button class="btn-cancel-edit">Cancelar</button><button class="btn-save-edit">Salvar</button></div>`;
         minhaLista.prepend(formDiv);
         const nomeInput = formDiv.querySelector('input[name="nome"]');
         nomeInput.focus();
         setupAutocomplete(nomeInput);
+        const simNaoContainer = formDiv.querySelector('.sim-nao-container');
+        if (simNaoContainer) {
+            simNaoContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('sim-nao-btn')) {
+                    simNaoContainer.querySelectorAll('.sim-nao-btn').forEach(btn => btn.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                }
+            });
+        }
         formDiv.querySelector('.btn-save-edit').addEventListener('click', () => salvarItem(formDiv));
         formDiv.querySelector('.btn-cancel-edit').addEventListener('click', renderizarLista);
     }
@@ -470,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
                 case 'hq':
                     novoItem.editora = formDiv.querySelector('input[name="editora"]').value.trim();
-                    novoItem.edicao = formDiv.querySelector('input[name="edicao"]').value.trim() || '#';
+                    novoItem.edicao = parseInt(formDiv.querySelector('input[name="edicao"]').value) || 0;
                     break;
                 case 'manga':
                     novoItem.volume = parseInt(formDiv.querySelector('input[name="volume"]').value) || 0;
@@ -484,6 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     novoItem.ultimoEpisodio = parseInt(formDiv.querySelector('input[name="ultimoEpisodio"]').value) || 0;
                     break;
             }
+            checkAndSetAutoStatus(novoItem);
             allData[activeList].unshift(novoItem);
             salvarDadosNoFirestore();
             renderizarLista();
@@ -501,7 +531,6 @@ document.addEventListener('DOMContentLoaded', () => {
         itemDiv.classList.add('is-editing');
         let groupLeftHTML = '', groupMiddleHTML = '';
         const nomeInputHTML = `<div class="autocomplete-container"><input type="text" name="nome" value="${item.nome}"><div class="autocomplete-suggestions hidden"></div></div>`;
-
         switch (activeList) {
             case 'livro':
                 groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML}<input type="text" name="autor" value="${item.autor || ''}"></span>`;
@@ -509,7 +538,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'hq':
                 groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML}<input type="text" name="editora" value="${item.editora || ''}"></span>`;
-                groupMiddleHTML = `<span class="coluna-temp"><input type="text" name="edicao" value="${item.edicao || '#'}"></span>`;
+                const edicaoNumerica = parseInt(String(item.edicao).replace('#', '')) || 0;
+                groupMiddleHTML = `<span class="coluna-temp"><input type="number" name="edicao" min="0" value="${edicaoNumerica}"></span>`;
                 break;
             case 'manga':
                 groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML}</span>`;
@@ -525,21 +555,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 groupMiddleHTML = `<span class="coluna-temp"><input type="number" name="temporada" min="0" value="${item.temporada || 0}"></span><span class="coluna-ep"><input type="number" name="ultimoEpisodio" min="0" value="${item.ultimoEpisodio || 0}"></span>`;
                 break;
         }
-
-        itemDiv.innerHTML = `
-            <div class="edit-inputs-wrapper">
-                <div class="col-group-left">${groupLeftHTML}</div>
-                <div class="col-group-middle">${groupMiddleHTML}</div>
-                <div class="col-group-right"><span class="coluna-acoes">&nbsp;</span></div>
-            </div>
-            <div class="edit-actions-row">
-                <button class="btn-cancel-edit">Cancelar</button>
-                <button class="btn-save-edit">Salvar</button>
-            </div>`;
-        
+        itemDiv.innerHTML = `<div class="edit-inputs-wrapper"><div class="col-group-left">${groupLeftHTML}</div><div class="col-group-middle">${groupMiddleHTML}</div><div class="col-group-right"><span class="coluna-acoes">&nbsp;</span></div></div><div class="edit-actions-row"><button class="btn-cancel-edit">Cancelar</button><button class="btn-save-edit">Salvar</button></div>`;
         const nomeInput = itemDiv.querySelector('input[name="nome"]');
         setupAutocomplete(nomeInput);
-
+        const simNaoContainer = itemDiv.querySelector('.sim-nao-container');
+        if (simNaoContainer) {
+            simNaoContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('sim-nao-btn')) {
+                    simNaoContainer.querySelectorAll('.sim-nao-btn').forEach(btn => btn.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                }
+            });
+        }
         itemDiv.querySelector('.btn-save-edit').addEventListener('click', () => salvarEdicao(itemIndex, itemDiv));
         itemDiv.querySelector('.btn-cancel-edit').addEventListener('click', () => renderizarLista());
     }
@@ -557,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
                 case 'hq':
                     item.editora = itemDiv.querySelector('input[name="editora"]').value.trim();
-                    item.edicao = itemDiv.querySelector('input[name="edicao"]').value.trim() || '#';
+                    item.edicao = parseInt(itemDiv.querySelector('input[name="edicao"]').value) || 0;
                     break;
                 case 'manga':
                     item.volume = parseInt(itemDiv.querySelector('input[name="volume"]').value) || 0;
@@ -571,11 +598,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.ultimoEpisodio = parseInt(itemDiv.querySelector('input[name="ultimoEpisodio"]').value) || 0;
                     break;
             }
+            checkAndSetAutoStatus(item);
             salvarDadosNoFirestore();
             renderizarLista();
         } else {
             showCustomAlert('Atenção', 'O campo de nome não pode ficar em branco.');
         }
+    }
+
+    function checkAndSetAutoStatus(item) {
+        if (activeList === 'filme') return false; 
+
+        const progressFields = ['temporada', 'ultimoEpisodio', 'volume', 'capitulo', 'pagina', 'edicao'];
+        let hasProgress = false;
+        for (const field of progressFields) {
+            if (item.hasOwnProperty(field)) {
+                const val = item[field];
+                if (typeof val === 'number' && val > 0) {
+                    hasProgress = true;
+                    break;
+                }
+            }
+        }
+        
+        let statusChanged = false;
+        if (item.status === 'naoComecei' && hasProgress) {
+            item.status = 'assistindo';
+            statusChanged = true;
+        } else if (item.status === 'assistindo' && !hasProgress) {
+            item.status = 'naoComecei';
+            statusChanged = true;
+        }
+        return statusChanged;
     }
 
     function finalizarAcao() {
@@ -596,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- EVENT LISTENERS ---
     mostrarFormBtn.addEventListener('click', adicionarFormularioAoInicio);
-    pesquisaInput.addEventListener('input', renderizarLista);
+    pesquisaInput.addEventListener('input', () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(renderizarLista, 300); });
     headerNome.addEventListener('click', () => ordenarLista(true));
     minimizeBtn.addEventListener('click', () => window.electronAPI?.minimizeWindow());
     maximizeBtn.addEventListener('click', () => window.electronAPI?.maximizeWindow());

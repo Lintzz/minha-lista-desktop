@@ -1,21 +1,43 @@
 {
   "name": "listadesktop",
   "version": "1.0.0",
+  "description": "Um aplicativo para organizar e acompanhar suas mídias favoritas.",
   "main": "main.js",
+  "author": "Lintz",
+  "license": "ISC",
   "scripts": {
     "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rimraf dist",
+    "build": "npm run clean && electron-builder"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "devDependencies": {
-    "electron": "^37.2.4"
+    "electron": "^37.2.4",
+    "electron-builder": "^24.13.3"
   },
   "dependencies": {
-    "firebase": "^12.0.0",
-    "mime-types": "^3.0.1",
-    "papaparse": "^5.5.3"
+    "electron-updater": "^6.6.2"
+  },
+  "build": {
+    "appId": "com.seu-nome.minhalista",
+    "productName": "Minha Lista",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "src/assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Lintzz",
+      "repo": "minha-lista-desktop"
+    }
   }
 }
