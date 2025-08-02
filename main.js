@@ -18,18 +18,27 @@ if (process.defaultApp) {
   app.setAsDefaultProtocolClient('minha-lista');
 }
 
+// Função para transmitir o deep link para todas as janelas abertas
+function broadcastDeepLink(url) {
+    if (!url || !url.startsWith('minha-lista://')) return;
+    BrowserWindow.getAllWindows().forEach(win => {
+        win.webContents.send('deep-link-received', url);
+    });
+}
+
 // Garante que apenas uma instância do app rode por vez
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
   app.quit();
 } else {
-  app.on('second-instance', (event, commandLine, workingDirectory) => {
-    const deepLinkUrl = commandLine.pop();
+  app.on('second-instance', (event, commandLine) => {
+    const deepLinkUrl = commandLine.find(arg => arg.startsWith('minha-lista://'));
+    broadcastDeepLink(deepLinkUrl);
+    // Traz a janela existente para o foco
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
-      mainWindow.webContents.send('deep-link-received', deepLinkUrl);
     }
   });
 }
@@ -42,13 +51,14 @@ function createWindow () {
       preload: path.join(__dirname, 'preload.js'),
     }
   });
-
+  
   mainWindow.loadFile(path.join(__dirname, 'src/html/login.html'));
 
-  const deepLinkOnStartup = process.argv.slice(1)[0];
+  // Lida com o deep link na inicialização do app
+  const deepLinkOnStartup = process.argv.find(arg => arg.startsWith('minha-lista://'));
   if (deepLinkOnStartup) {
       mainWindow.webContents.once('dom-ready', () => {
-          mainWindow.webContents.send('deep-link-received', deepLinkOnStartup);
+          broadcastDeepLink(deepLinkOnStartup);
       });
   }
 }
@@ -79,14 +89,12 @@ ipcMain.on('ready-to-show', () => { if (mainWindow && !mainWindow.isDestroyed())
 ipcMain.on('open-external-link', (event, url) => { shell.openExternal(url); });
 ipcMain.on('navigate-to-app', (event) => { const win = BrowserWindow.fromWebContents(event.sender); if (win) { win.loadFile(path.join(__dirname, 'src/html/index.html')); } });
 ipcMain.on('navigate-to-settings', (event) => { const win = BrowserWindow.fromWebContents(event.sender); if (win) { win.loadFile(path.join(__dirname, 'src/html/settings.html')); } });
-ipcMain.on('navigate-to-main', (event) => { const win = BrowserWindow.fromWebContents(event.sender); if (win) { win.loadFile(path.join(__dirname, 'src/html/index.html')); } });
+ipcMain.on('navigate-to-main', (event) => { const win = BrowserWindow.fromWebContents(event.sender); if (win) { win.loadFile(path.join(__dirname, 'src/html/login.html')); } });
 ipcMain.on('navigate-to-confirm-register', (event) => { const win = BrowserWindow.fromWebContents(event.sender); if (win) { win.loadFile(path.join(__dirname, 'src/html/confirm-register.html')); } });
 ipcMain.on('logout', (event) => { const win = BrowserWindow.fromWebContents(event.sender); if (win) { session.defaultSession.clearStorageData().then(() => { win.loadFile(path.join(__dirname, 'src/html/login.html')); }); }});
 ipcMain.on('minimize-window', (event) => { BrowserWindow.fromWebContents(event.sender)?.minimize(); });
 ipcMain.on('maximize-window', (event) => { const win = BrowserWindow.fromWebContents(event.sender); if (win) { if (win.isMaximized()) { win.unmaximize(); } else { win.maximize(); } } });
-
-// O botão 'X' da interface agora chama o encerramento do app diretamente.
-ipcMain.on('close-window', (event) => {
+ipcMain.on('close-window', () => {
     app.quit();
 });
 

@@ -13,14 +13,48 @@
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 #user-profile-area { -webkit-app-region: no-drag; display: flex; align-items: center; padding: 0 10px; cursor: pointer; border-radius: 5px; transition: background-color 0.2s; height: 45px; }
 #user-profile-area:hover { background-color: var(--surface-highlight-color); }
-#user-avatar { width: 28px; height: 28px; border-radius: 50%; margin-right: 8px; border: 1px solid var(--border-color); }
-#user-nickname { font-weight: bold; font-size: 0.9em; }
-.main-content { flex-grow: 1; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; -webkit-app-region: no-drag; }
+#user-avatar { 
+    width: 28px; 
+    height: 28px; 
+    border-radius: 50%; 
+    margin-right: 8px; 
+    border: 1px solid var(--border-color); 
+    object-fit: cover; /* <-- ADICIONE ESTA LINHA */
+}#user-nickname { font-weight: bold; font-size: 0.9em; }
 .hidden { display: none; }
 
-/* ESTILOS DA TELA PRINCIPAL (index.html) */
-#listaContainer { background-color: var(--surface-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
-#minhaLista { flex-grow: 1; scrollbar-gutter: stable; }
+.main-content {
+    flex-grow: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    /* IMPORTANTE: Este container não deve ter scroll, ele apenas ocupa o espaço */
+    overflow: hidden; 
+    -webkit-app-region: no-drag;
+}
+
+#listaContainer {
+    background-color: var(--surface-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Essencial para permitir que este container encolha e respeite os limites */
+    min-height: 0; 
+}
+
+#minhaLista {
+    /* Este é o elemento que efetivamente terá a barra de rolagem */
+    flex-grow: 1;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
 #pesquisaInput { -webkit-app-region: no-drag; flex-grow: 1; padding: 0 15px; height: 40px; border-radius: 20px; border: 1px solid var(--border-color); background-color: var(--input-bg-color); color: var(--primary-text-color); font-size: 1em; box-sizing: border-box; }
 #list-tabs-container { display: flex; justify-content: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); }
 .list-tab { padding: 10px 20px; border: none; background-color: transparent; color: var(--secondary-text-color); cursor: pointer; font-size: 1.1em; position: relative; top: 1px; }
@@ -101,9 +135,9 @@
 .status-assistindo { background-color: var(--warning-color); }
 .status-terminado { background-color: var(--success-color); }
 .status-finalizado { background-color: var(--final-color); }
-.coluna-nome { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
+.coluna-nome { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 230px; }
 .item-lista.is-editing .coluna-nome, .item-lista.form-inline .coluna-nome { overflow: visible; }
-.coluna-temp { flex-basis: 80px; text-align: center; }
+.coluna-temp { flex-basis: 93px; text-align: center; }
 .coluna-ep { flex-basis: 80px; text-align: center; }
 .coluna-acoes { width: 100%; text-align: right; }
 .item-lista.is-editing, .item-lista.form-inline { background-color: var(--surface-highlight-color); border-radius: 5px; border-bottom: 1px solid var(--border-color); flex-direction: column; align-items: stretch; }
@@ -305,4 +339,105 @@ input:checked + .slider-small {
 
 input:checked + .slider-small:before {
     transform: translateX(26px);
+}
+
+
+
+.status-selector-container h4 {
+    margin: 0 0 10px 0;
+    font-size: 0.9em;
+    color: var(--secondary-text-color);
+    text-align: center; /* Centraliza o título "Status" */
+}
+
+.status-options {
+    display: flex;
+    justify-content: center; /* Centraliza as opções */
+    gap: 20px;
+}
+
+/* O resto do CSS do seletor continua igual */
+.status-option {
+    background: none;
+    border: none;
+    color: var(--primary-text-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 3px solid transparent;
+    opacity: 0.6;
+    transition: opacity 0.2s, border-bottom-color 0.2s;
+}
+
+.status-option:hover {
+    opacity: 1;
+}
+
+.status-option.selected {
+    opacity: 1;
+    font-weight: bold;
+    border-bottom: 1px solid var(--accent-color);
+}
+
+.status-option .status-dot {
+    width: 12px;
+    height: 12px;
+    margin-right: 8px;
+}
+
+/* Estilos para a dica de ajuda (tooltip) */
+.help-tooltip {
+    position: relative; /* Essencial para o posicionamento do balão */
+    display: inline-block;
+}
+
+.help-tooltip .fa-circle-question {
+    color: var(--secondary-text-color);
+    cursor: help;
+    font-size: 0.9em;
+}
+
+/* Estilos para a dica de ajuda (tooltip) */
+.help-tooltip {
+    position: relative; /* Essencial para o posicionamento do balão */
+    display: inline-block;
+}
+
+.help-tooltip .fa-circle-question {
+    color: var(--secondary-text-color);
+    cursor: help;
+    font-size: 0.9em;
+}
+
+/* O balão de texto (tooltip) */
+.help-tooltip .tooltip-text {
+    visibility: hidden; /* Começa invisível */
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 10px;
+    position: absolute;
+    z-index: 1;
+    bottom: -75%;
+    margin-left: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-weight: normal; /* Texto normal, não negrito */
+    font-size: 0.9em; /* Tamanho da fonte do balão */
+}
+
+/* Mostra o balão ao passar o mouse */
+.help-tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+#user-profile-area .fa-chevron-down {
+    font-size: 0.6em; /* Deixa a seta um pouco menor que o texto */
+    margin-left: 8px; /* Cria um espaço entre o nome e a seta */
+    opacity: 0.9; /* Deixa a seta um pouco mais sutil */
+    transition: transform 0.2s ease-in-out;
 }

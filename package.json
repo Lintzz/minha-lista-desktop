@@ -12,7 +12,8 @@
   },
   "devDependencies": {
     "electron": "^37.2.4",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "rimraf": "^6.0.1"
   },
   "dependencies": {
     "electron-updater": "^6.6.2"

@@ -55,3 +55,23 @@ input:checked + .slider:before { transform: translateX(22px); }
 #modal-actions button { padding: 10px 20px; font-size: 0.9em; font-weight: bold; border-radius: 5px; border: none; cursor: pointer; }
 #modal-btn-cancel { background-color: var(--button-bg-color); color: var(--primary-text-color); }
 #modal-btn-confirm.destructive { background-color: var(--destructive-color); color: white; }
+
+
+/* Estilos para os novos inputs de texto na tela de configurações */
+.setting-section .form-group input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--input-bg-color);
+    color: var(--primary-text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1em;
+    box-sizing: border-box; /* Garante que o padding não aumente a largura total */
+}
+
+/* Efeito de foco para os inputs */
+.setting-section .form-group input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.2);
+}

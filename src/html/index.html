@@ -20,9 +20,10 @@
 
     <div id="app-content" class="hidden">
         <div id="title-bar">
-            <div id="user-profile-area">
+            <div id="user-profile-area" title="Abrir menu do usuário">
                 <img id="user-avatar" src="" alt="Avatar do utilizador">
                 <span id="user-nickname">Utilizador</span>
+                <i class="fas fa-chevron-down"></i> 
             </div>
             <div id="drag-region"></div>
             <div id="window-controls">
@@ -51,7 +52,17 @@
                     <button id="filter-menu-btn">▾ Filtro: Todos</button>
                 </div>
                 <div class="cabecalho-lista">
-                    <div class="col-group-left"><strong class="coluna-status">&nbsp;</strong><strong class="coluna-nome" id="header-nome" title="Clique para ordenar">Nome <span id="sort-indicator"></span></strong></div>
+                    <div class="col-group-left">
+                        <strong class="coluna-status">
+                            <div class="help-tooltip">
+                                <i class="fas fa-circle-question"></i>
+                                <span class="tooltip-text">
+                                    Clique na bolinha para editar o status rapidamente!
+                                </span>
+                            </div>
+                        </strong>
+                        <strong class="coluna-nome" id="header-nome" title="Clique para ordenar">Nome <span id="sort-indicator"></span></strong>
+                    </div>
                     <div class="col-group-middle"><strong class="coluna-temp" id="header-col-1">Temporada</strong><strong class="coluna-ep" id="header-col-2">Episódio</strong></div>
                     <div class="col-group-right"><strong class="coluna-acoes">&nbsp;</strong></div>
                 </div>
@@ -74,7 +85,7 @@
         <button data-status="naoComecei">Não Comecei</button>
         <button data-status="assistindo">Lendo / Assistindo</button>
         <button data-status="terminado">Terminei</button>
-        <button data-status="finalizado">Finalizado (Fim)</button>
+        <button data-status="finalizado">Finalizado</button>
     </div>
     
     <div id="filter-dropdown" class="hidden">

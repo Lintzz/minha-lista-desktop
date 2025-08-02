@@ -1,12 +1,13 @@
 import { auth, db } from './firebase-config.js';
-import { onAuthStateChanged, deleteUser, GoogleAuthProvider, reauthenticateWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { onAuthStateChanged, deleteUser, GoogleAuthProvider, reauthenticateWithCredential, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, getDoc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { applyAppearance } from './appearance.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
     let currentSettings = {};
     let confirmCallback = null;
+    let isReauthenticatingForDelete = false;
 
     const sidebarLinks = document.querySelectorAll('.settings-sidebar .nav-link');
     const tabContents = document.querySelectorAll('.settings-content .tab-content');
@@ -31,14 +32,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const minimizeBtn = document.getElementById('minimize-btn');
     const maximizeBtn = document.getElementById('maximize-btn');
     const closeBtn = document.getElementById('close-btn');
+    const profilePicPreview = document.getElementById('profile-pic-preview');
+    const nicknameInput = document.getElementById('nickname-input');
+    const profilePicUrlInput = document.getElementById('profile-pic-url-input');
+    const btnSaveProfile = document.getElementById('btn-save-profile');
+    const profileStatusMessage = document.getElementById('profile-status-message');
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
             await loadAndApplySettings();
             setupEventListeners();
+            
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            const docSnap = await getDoc(userDocRef);
+            if (docSnap.exists()) {
+                const userData = docSnap.data();
+                nicknameInput.value = userData.displayName || '';
+                profilePicUrlInput.value = userData.photoURL || '';
+                profilePicPreview.src = userData.photoURL || 'https://placehold.co/100x100/2C2C2C/E0E0E0?text=Foto';
+            }
         } else {
-            window.electronAPI.navigateToMain(); // Volta para a tela de login
+            window.electronAPI.navigateToMain();
         }
     });
 
@@ -130,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        btnBack.addEventListener('click', () => window.electronAPI?.navigateToMain());
+        btnBack.addEventListener('click', () => window.electronAPI?.navigateToApp());
         minimizeBtn.addEventListener('click', () => window.electronAPI?.minimizeWindow());
         maximizeBtn.addEventListener('click', () => window.electronAPI?.maximizeWindow());
         closeBtn.addEventListener('click', () => window.electronAPI?.closeWindow());
@@ -148,6 +163,36 @@ document.addEventListener('DOMContentLoaded', () => {
         modalBtnCancel.addEventListener('click', hideModal);
         modalBtnConfirm.addEventListener('click', () => { if (typeof confirmCallback === 'function') { confirmCallback(); } });
         modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) hideModal(); });
+
+        btnSaveProfile.addEventListener('click', handleProfileSave);
+        profilePicUrlInput.addEventListener('input', () => {
+            const newUrl = profilePicUrlInput.value.trim();
+            profilePicPreview.src = newUrl || 'https://placehold.co/100x100/2C2C2C/E0E0E0?text=Foto';
+        });
+
+        window.electronAPI.handleDeepLink(async (url) => {
+            if (!isReauthenticatingForDelete || !currentUser) return;
+            isReauthenticatingForDelete = false;
+
+            try {
+                const urlParams = new URLSearchParams(new URL(url).search);
+                const idToken = urlParams.get('idToken');
+                if (!idToken) throw new Error("Token não encontrado.");
+
+                const credential = GoogleAuthProvider.credential(idToken);
+                await reauthenticateWithCredential(currentUser, credential);
+                
+                showCustomAlert('Sucesso', 'Reautenticação concluída. Apagando a conta agora...');
+                
+                const userDocRef = doc(db, 'users', currentUser.uid);
+                await deleteDoc(userDocRef);
+                await deleteUser(currentUser);
+
+            } catch (error) {
+                console.error("Erro ao reautenticar e apagar conta:", error);
+                showCustomAlert('Falha', 'A reautenticação falhou. A conta não foi apagada.');
+            }
+        });
     }
 
     async function handleThemeChange(e) {
@@ -226,39 +271,54 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
+    async function handleProfileSave() {
+        if (!currentUser) return;
+
+        const newNickname = nicknameInput.value.trim();
+        const newPhotoURL = profilePicUrlInput.value.trim();
+
+        if (!newNickname) {
+            profileStatusMessage.textContent = 'O nome de usuário não pode ficar em branco.';
+            return;
+        }
+
+        profileStatusMessage.textContent = 'Salvando...';
+        btnSaveProfile.disabled = true;
+
+        try {
+            await updateProfile(currentUser, {
+                displayName: newNickname,
+                photoURL: newPhotoURL
+            });
+
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            await updateDoc(userDocRef, {
+                displayName: newNickname,
+                photoURL: newPhotoURL
+            });
+
+            profileStatusMessage.textContent = 'Perfil atualizado com sucesso!';
+            setTimeout(() => profileStatusMessage.textContent = '', 3000);
+
+        } catch (error) {
+            console.error("Erro ao salvar perfil:", error);
+            profileStatusMessage.textContent = 'Erro ao salvar. Tente novamente.';
+        } finally {
+            btnSaveProfile.disabled = false;
+        }
+    }
+
     function handleDeleteAccount() {
         showConfirmationModal(
             'Apagar a sua Conta?',
-            '<strong>Atenção:</strong> Esta é a sua última oportunidade. Apagar a sua conta removerá permanentemente todos os seus dados. Esta ação não pode ser desfeita.',
-            async () => {
+            'Esta é a sua última oportunidade. Apagar a sua conta removerá permanentemente todos os seus dados.',
+            () => {
                 if (!currentUser) return;
                 hideModal();
-                try {
-                    const userDocRef = doc(db, 'users', currentUser.uid);
-                    await deleteDoc(userDocRef);
-                    await deleteUser(currentUser);
-                    showCustomAlert('Sucesso', 'Conta apagada com sucesso.');
-                    setTimeout(() => window.electronAPI?.logout(), 2000);
-                } catch (error) {
-                    console.error("Erro ao apagar conta:", error);
-                    if (error.code === 'auth/requires-recent-login') {
-                        showCustomAlert('Ação Necessária', 'Por segurança, precisamos de confirmar a sua identidade. Uma janela do Google irá abrir-se.');
-                        const provider = new GoogleAuthProvider();
-                        try {
-                            await reauthenticateWithPopup(currentUser, provider);
-                            const userDocRef = doc(db, 'users', currentUser.uid);
-                            await deleteDoc(userDocRef);
-                            await deleteUser(currentUser);
-                            showCustomAlert('Sucesso', 'Conta apagada com sucesso.');
-                            setTimeout(() => window.electronAPI?.logout(), 2000);
-                        } catch (reauthError) {
-                            console.error("Erro na re-autenticação:", reauthError);
-                            showCustomAlert('Falha', 'A re-autenticação falhou. A conta não foi apagada.');
-                        }
-                    } else {
-                        showCustomAlert('Erro', `Erro ao apagar conta: ${error.message}`);
-                    }
-                }
+                
+                showCustomAlert('Ação Necessária', 'Por segurança, seu navegador será aberto para você fazer login novamente e confirmar a exclusão.');
+                isReauthenticatingForDelete = true;
+                window.electronAPI.openExternalLink('https://minha-lista-ponte.vercel.app');
             }
         );
     }

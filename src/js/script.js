@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             itemDiv.className = 'item-lista';
             itemDiv.dataset.id = item.id;
             let colTempHTML = '', colEpHTML = '', subTitleHTML = '';
-            const isChecked = item.status === 'terminado';
+            const isChecked = item.status === 'terminado' || item.status === 'finalizado';
 
             switch (activeList) {
                 case 'manga':
@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!item) return;
 
                 const isWatched = event.target.checked;
-                item.status = isWatched ? 'terminado' : 'naoComecei';
+                item.status = isWatched ? 'finalizado' : 'naoComecei';
                 
                 salvarDadosNoFirestore();
                 renderizarLista(); 
@@ -462,27 +462,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'filme':
                 groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML}</span>`;
-                groupMiddleHTML = `<span class="coluna-temp"><div class="sim-nao-container"><button class="sim-nao-btn" data-value="naoComecei">Não</button><button class="sim-nao-btn selected" data-value="terminado">Sim</button></div></span>`;
+                groupMiddleHTML = ``;
                 break;
             default:
                 groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML}</span>`;
                 groupMiddleHTML = `<span class="coluna-temp"><input type="number" name="temporada" min="0" placeholder="Temp"></span><span class="coluna-ep"><input type="number" name="ultimoEpisodio" min="0" placeholder="Ep"></span>`;
                 break;
         }
-        formDiv.innerHTML = `<div class="edit-inputs-wrapper"><div class="col-group-left">${groupLeftHTML}</div><div class="col-group-middle">${groupMiddleHTML}</div><div class="col-group-right"><span class="coluna-acoes">&nbsp;</span></div></div><div class="edit-actions-row"><button class="btn-cancel-edit">Cancelar</button><button class="btn-save-edit">Salvar</button></div>`;
+
+        const statusSelectorHTML = `
+            <div class="status-selector-container">
+                <h4>Status</h4>
+                <div class="status-options">
+                    <button class="status-option selected" data-status="naoComecei"><div class="status-dot status-naoComecei"></div>Não Comecei</button>
+                    <button class="status-option" data-status="assistindo"><div class="status-dot status-assistindo"></div>Lendo/Assistindo</button>
+                    <button class="status-option" data-status="terminado"><div class="status-dot status-terminado"></div>Terminei</button>
+                    <button class="status-option" data-status="finalizado"><div class="status-dot status-finalizado"></div>Finalizado</button>
+                </div>
+            </div>
+        `;
+
+        formDiv.innerHTML = `
+            <div class="edit-inputs-wrapper">
+                <div class="col-group-left">${groupLeftHTML}</div>
+                <div class="col-group-middle">${groupMiddleHTML}</div>
+                <div class="col-group-right"><span class="coluna-acoes">&nbsp;</span></div>
+            </div>
+            ${statusSelectorHTML}
+            <div class="edit-actions-row">
+                <button class="btn-cancel-edit">Cancelar</button>
+                <button class="btn-save-edit">Salvar</button>
+            </div>`;
+            
         minhaLista.prepend(formDiv);
         const nomeInput = formDiv.querySelector('input[name="nome"]');
         nomeInput.focus();
         setupAutocomplete(nomeInput);
-        const simNaoContainer = formDiv.querySelector('.sim-nao-container');
-        if (simNaoContainer) {
-            simNaoContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('sim-nao-btn')) {
-                    simNaoContainer.querySelectorAll('.sim-nao-btn').forEach(btn => btn.classList.remove('selected'));
-                    e.target.classList.add('selected');
-                }
-            });
-        }
+
+        formDiv.querySelector('.status-options').addEventListener('click', (e) => {
+            const button = e.target.closest('.status-option');
+            if (button) {
+                formDiv.querySelectorAll('.status-option').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+            }
+        });
+
         formDiv.querySelector('.btn-save-edit').addEventListener('click', () => salvarItem(formDiv));
         formDiv.querySelector('.btn-cancel-edit').addEventListener('click', renderizarLista);
     }
@@ -490,7 +514,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function salvarItem(formDiv) {
         const nome = formDiv.querySelector('input[name="nome"]').value.trim();
         if (nome) {
-            let novoItem = { id: nextItemId++, nome: nome, status: 'naoComecei' };
+            const selectedStatus = formDiv.querySelector('.status-option.selected').dataset.status;
+            let novoItem = { id: nextItemId++, nome: nome, status: selectedStatus };
+
             switch (activeList) {
                 case 'livro':
                     novoItem.autor = formDiv.querySelector('input[name="autor"]').value.trim();
@@ -506,14 +532,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     novoItem.capitulo = parseInt(formDiv.querySelector('input[name="capitulo"]').value) || 0;
                     break;
                 case 'filme':
-                    novoItem.status = formDiv.querySelector('.sim-nao-btn.selected').dataset.value || 'naoComecei';
-                    break;
+                    break; 
                 default:
                     novoItem.temporada = parseInt(formDiv.querySelector('input[name="temporada"]').value) || 0;
                     novoItem.ultimoEpisodio = parseInt(formDiv.querySelector('input[name="ultimoEpisodio"]').value) || 0;
                     break;
             }
-            checkAndSetAutoStatus(novoItem);
+            
+            // Se o status escolhido for 'Não Comecei', mas já há progresso, muda para 'Assistindo'
+            if (novoItem.status === 'naoComecei') {
+                checkAndSetAutoStatus(novoItem);
+            }
+            
             allData[activeList].unshift(novoItem);
             salvarDadosNoFirestore();
             renderizarLista();
@@ -538,35 +568,57 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'hq':
                 groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML}<input type="text" name="editora" value="${item.editora || ''}"></span>`;
-                const edicaoNumerica = parseInt(String(item.edicao).replace('#', '')) || 0;
-                groupMiddleHTML = `<span class="coluna-temp"><input type="number" name="edicao" min="0" value="${edicaoNumerica}"></span>`;
+                groupMiddleHTML = `<span class="coluna-temp"><input type="number" name="edicao" min="0" value="${item.edicao || 0}"></span>`;
                 break;
             case 'manga':
                 groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML}</span>`;
                 groupMiddleHTML = `<span class="coluna-temp"><input type="number" name="volume" min="0" value="${item.volume || 0}"></span><span class="coluna-ep"><input type="number" name="capitulo" min="0" value="${item.capitulo || 0}"></span>`;
                 break;
             case 'filme':
-                const isTerminado = item.status === 'terminado';
-                groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML}</span>`;
-                groupMiddleHTML = `<span class="coluna-temp"><div class="sim-nao-container"><button class="sim-nao-btn ${!isTerminado ? 'selected' : ''}" data-value="naoComecei">Não</button><button class="sim-nao-btn ${isTerminado ? 'selected' : ''}" data-value="terminado">Sim</button></div></span>`;
-                break;
+                 groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML}</span>`;
+                 groupMiddleHTML = ``;
+                 break;
             default:
                 groupLeftHTML = `<span class="coluna-status">&nbsp;</span><span class="coluna-nome">${nomeInputHTML}</span>`;
                 groupMiddleHTML = `<span class="coluna-temp"><input type="number" name="temporada" min="0" value="${item.temporada || 0}"></span><span class="coluna-ep"><input type="number" name="ultimoEpisodio" min="0" value="${item.ultimoEpisodio || 0}"></span>`;
                 break;
         }
-        itemDiv.innerHTML = `<div class="edit-inputs-wrapper"><div class="col-group-left">${groupLeftHTML}</div><div class="col-group-middle">${groupMiddleHTML}</div><div class="col-group-right"><span class="coluna-acoes">&nbsp;</span></div></div><div class="edit-actions-row"><button class="btn-cancel-edit">Cancelar</button><button class="btn-save-edit">Salvar</button></div>`;
+
+        const statusSelectorHTML = `
+            <div class="status-selector-container">
+                <h4>Status</h4>
+                <div class="status-options">
+                    <button class="status-option ${item.status === 'naoComecei' ? 'selected' : ''}" data-status="naoComecei"><div class="status-dot status-naoComecei"></div>Não Comecei</button>
+                    <button class="status-option ${item.status === 'assistindo' ? 'selected' : ''}" data-status="assistindo"><div class="status-dot status-assistindo"></div>Lendo/Assistindo</button>
+                    <button class="status-option ${item.status === 'terminado' ? 'selected' : ''}" data-status="terminado"><div class="status-dot status-terminado"></div>Terminei</button>
+                    <button class="status-option ${item.status === 'finalizado' ? 'selected' : ''}" data-status="finalizado"><div class="status-dot status-finalizado"></div>Finalizado</button>
+                </div>
+            </div>
+        `;
+
+        itemDiv.innerHTML = `
+            <div class="edit-inputs-wrapper">
+                <div class="col-group-left">${groupLeftHTML}</div>
+                <div class="col-group-middle">${groupMiddleHTML}</div>
+                <div class="col-group-right"><span class="coluna-acoes">&nbsp;</span></div>
+            </div>
+            ${statusSelectorHTML}
+            <div class="edit-actions-row">
+                <button class="btn-cancel-edit">Cancelar</button>
+                <button class="btn-save-edit">Salvar</button>
+            </div>`;
+            
         const nomeInput = itemDiv.querySelector('input[name="nome"]');
         setupAutocomplete(nomeInput);
-        const simNaoContainer = itemDiv.querySelector('.sim-nao-container');
-        if (simNaoContainer) {
-            simNaoContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('sim-nao-btn')) {
-                    simNaoContainer.querySelectorAll('.sim-nao-btn').forEach(btn => btn.classList.remove('selected'));
-                    e.target.classList.add('selected');
-                }
-            });
-        }
+        
+        itemDiv.querySelector('.status-options').addEventListener('click', (e) => {
+            const button = e.target.closest('.status-option');
+            if (button) {
+                itemDiv.querySelectorAll('.status-option').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+            }
+        });
+
         itemDiv.querySelector('.btn-save-edit').addEventListener('click', () => salvarEdicao(itemIndex, itemDiv));
         itemDiv.querySelector('.btn-cancel-edit').addEventListener('click', () => renderizarLista());
     }
@@ -576,6 +628,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const nome = itemDiv.querySelector('input[name="nome"]').value.trim();
         if (nome) {
             item.nome = nome;
+            item.status = itemDiv.querySelector('.status-option.selected').dataset.status;
+
             switch (activeList) {
                 case 'livro':
                     item.autor = itemDiv.querySelector('input[name="autor"]').value.trim();
@@ -591,7 +645,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.capitulo = parseInt(itemDiv.querySelector('input[name="capitulo"]').value) || 0;
                     break;
                 case 'filme':
-                    item.status = itemDiv.querySelector('.sim-nao-btn.selected').dataset.value || 'naoComecei';
                     break;
                 default:
                     item.temporada = parseInt(itemDiv.querySelector('input[name="temporada"]').value) || 0;
@@ -605,7 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showCustomAlert('Atenção', 'O campo de nome não pode ficar em branco.');
         }
     }
-
+  
     function checkAndSetAutoStatus(item) {
         if (activeList === 'filme') return false; 
 
