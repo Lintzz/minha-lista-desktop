@@ -1,6 +1,6 @@
 {
   "name": "listadesktop",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Um aplicativo para organizar e acompanhar suas mídias favoritas.",
   "main": "main.js",
   "author": "Lintz",
@@ -16,11 +16,12 @@
     "rimraf": "^6.0.1"
   },
   "dependencies": {
+    "electron-log": "^5.4.2",
     "electron-updater": "^6.6.2"
   },
   "build": {
     "appId": "com.seu-nome.minhalista",
-    "productName": "Minha Lista",
+    "productName": "Minha-Lista",
     "files": [
       "main.js",
       "preload.js",

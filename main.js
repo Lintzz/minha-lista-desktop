@@ -2,6 +2,14 @@ const { app, BrowserWindow, ipcMain, dialog, session, shell } = require('electro
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
+const log = require('electron-log'); // Adicionado para logs detalhados
+
+// --- Configuração do Logger ---
+// Isso força o autoUpdater a registrar tudo em um arquivo
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+log.info('App starting...');
+
 
 const TMDB_API_KEY = 'c7c876994e8a4d2e7369ab17d2046565';
 const GOOGLE_BOOKS_API_KEY = 'AIzaSyD42r6OXZhjh--lcM2vq-kQK2uRQYRGLgM';
@@ -51,6 +59,18 @@ function createWindow () {
       preload: path.join(__dirname, 'preload.js'),
     }
   });
+
+   // CORREÇÃO: Handler de janela inteligente
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // Se for um link externo, abre no navegador padrão
+    if (url.startsWith('http')) {
+      shell.openExternal(url);
+      return { action: 'deny' }; // Impede o Electron de criar uma nova janela
+    }
+    // Para outros casos, também impede
+    return { action: 'deny' };
+  });
+
   
   mainWindow.loadFile(path.join(__dirname, 'src/html/login.html'));
 
@@ -82,6 +102,29 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+// --- Listeners do AutoUpdater ---
+// Eles nos dirão exatamente o que está acontecendo
+autoUpdater.on('checking-for-update', () => {
+  log.info('Checking for update...');
+});
+autoUpdater.on('update-available', (info) => {
+  log.info('Update available.', info);
+});
+autoUpdater.on('update-not-available', (info) => {
+  log.info('Update not available.', info);
+});
+autoUpdater.on('error', (err) => {
+  log.error('Error in auto-updater. ' + err);
+});
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = `Download speed: ${progressObj.bytesPerSecond} - Downloaded ${progressObj.percent}% (${progressObj.transferred}/${progressObj.total})`;
+  log.info(log_message);
+});
+autoUpdater.on('update-downloaded', (info) => {
+  log.info('Update downloaded', info);
+});
+
 
 // --- IPC Listeners (Comunicação entre processos) ---
 
