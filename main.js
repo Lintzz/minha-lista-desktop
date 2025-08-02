@@ -87,8 +87,8 @@ function createWindow () {
 
 app.whenReady().then(() => {
   createWindow();
-  // Inicia a verificação de updates assim que o app estiver pronto
-  autoUpdater.checkForUpdatesAndNotify();
+  // Apenas PROCURA por atualizações. A notificação será controlada por nós.
+  autoUpdater.checkForUpdates(); 
 });
 
 app.on('window-all-closed', () => {
@@ -103,30 +103,30 @@ app.on('activate', () => {
   }
 });
 
-// --- Listeners do AutoUpdater ---
-// Eles nos dirão exatamente o que está acontecendo
-autoUpdater.on('checking-for-update', () => {
-  log.info('Checking for update...');
-});
-autoUpdater.on('update-available', (info) => {
-  log.info('Update available.', info);
-});
-autoUpdater.on('update-not-available', (info) => {
-  log.info('Update not available.', info);
-});
-autoUpdater.on('error', (err) => {
-  log.error('Error in auto-updater. ' + err);
-});
+autoUpdater.on('checking-for-update', () => { log.info('Procurando por atualização...'); });
+autoUpdater.on('update-available', (info) => { log.info('Atualização disponível.', info); });
+autoUpdater.on('update-not-available', (info) => { log.info('Nenhuma atualização disponível.', info); });
+autoUpdater.on('error', (err) => { log.error('Erro no auto-updater. ' + err); });
+
 autoUpdater.on('download-progress', (progressObj) => {
   let log_message = `Download speed: ${progressObj.bytesPerSecond} - Downloaded ${progressObj.percent}% (${progressObj.transferred}/${progressObj.total})`;
   log.info(log_message);
 });
+
+// ESTE É O EVENTO MAIS IMPORTANTE AGORA
 autoUpdater.on('update-downloaded', (info) => {
-  log.info('Update downloaded', info);
+  log.info('Atualização baixada.', info);
+  // Envia um sinal para a interface avisando que a atualização está pronta
+  if (mainWindow) {
+    mainWindow.webContents.send('update-ready');
+  }
 });
 
-
 // --- IPC Listeners (Comunicação entre processos) ---
+// NOVO LISTENER: Ouve o pedido da interface para reiniciar
+ipcMain.on('quit-and-install-update', () => {
+    autoUpdater.quitAndInstall();
+});
 
 ipcMain.on('ready-to-show', () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show(); });
 ipcMain.on('open-external-link', (event, url) => { shell.openExternal(url); });

@@ -3,6 +3,8 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/f
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', () => {
+    const updateNotification = document.getElementById('update-notification');
+    const restartAppBtn = document.getElementById('restart-app-btn');
     const loadingScreen = document.getElementById('loading-screen');
     const appContent = document.getElementById('app-content');
     const userProfileArea = document.getElementById('user-profile-area');
@@ -116,6 +118,18 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Erro ao salvar no Firestore:", error);
         }
     }
+
+     // Ouve o sinal do main.js de que a atualização está pronta
+    window.electronAPI.onUpdateReady(() => {
+        console.log("Atualização pronta para ser instalada!");
+        updateNotification.classList.remove('hidden');
+    });
+
+    // Diz ao main.js para reiniciar quando o botão for clicado
+    restartAppBtn.addEventListener('click', () => {
+        window.electronAPI.quitAndInstallUpdate();
+    });
+    
 
     function showCustomAlert(title, message) { modalTitle.textContent = title; modalMessage.innerHTML = message; modalOverlay.classList.remove('hidden'); setTimeout(() => modalOverlay.classList.add('visible'), 10); }
     function hideCustomAlert() { modalOverlay.classList.remove('visible'); setTimeout(() => modalOverlay.classList.add('hidden'), 200); }

@@ -441,3 +441,42 @@ input:checked + .slider-small:before {
     opacity: 0.9; /* Deixa a seta um pouco mais sutil */
     transition: transform 0.2s ease-in-out;
 }
+
+#update-notification {
+    position: absolute;
+    top: 40px; /* Abaixo da barra de título */
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px);
+    max-width: 560px;
+    background-color: var(--accent-color);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 0 0 8px 8px; /* Cantos arredondados apenas embaixo */
+    z-index: 3000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    font-weight: bold;
+}
+
+#update-notification.hidden {
+    display: none;
+}
+
+#update-notification button {
+    padding: 6px 12px;
+    border: 1px solid white;
+    background-color: transparent;
+    color: white;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+#update-notification button:hover {
+    background-color: white;
+    color: var(--accent-color);
+}
